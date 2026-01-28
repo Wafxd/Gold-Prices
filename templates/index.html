@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Tracker Ultra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #020617;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
+
+        .glow-antam:hover { box-shadow: 0 0 30px -10px rgba(234, 179, 8, 0.3); }
+        .glow-hrta:hover { box-shadow: 0 0 30px -10px rgba(59, 130, 246, 0.3); }
+        .glow-ubs:hover { box-shadow: 0 0 30px -10px rgba(239, 68, 68, 0.3); }
+        .glow-g24:hover { box-shadow: 0 0 30px -10px rgba(34, 197, 94, 0.3); }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+    </style>
+</head>
+
+<body class="text-slate-200 overflow-x-hidden">
+
+    <div class="fixed top-0 left-0 w-full h-full -z-10 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-yellow-500/10 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]"></div>
+    </div>
+
+    <div class="container mx-auto px-6 py-12 max-w-6xl">
+        <header class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6 border-b border-white/5 pb-8">
+            <div>
+                <h1 class="text-6xl font-black tracking-tighter bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent italic">
+                    GOLD<span class="text-yellow-500">XP</span>
+                </h1>
+                <p class="text-slate-400 font-bold mt-2 tracking-[0.2em] uppercase text-[10px]">Real-time Market Intelligence</p>
+            </div>
+            <div class="flex flex-col items-end gap-3">
+                <button onclick="exportAllToExcel()" class="bg-green-600/20 hover:bg-green-600 border border-green-500/50 text-green-400 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-2 uppercase">
+                    <i class="fa-solid fa-file-excel"></i> Export All to Excel
+                </button>
+                <p id="global-date" class="text-sm font-black text-yellow-500/80 font-mono tracking-widest uppercase text-right">System Standby</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            <div class="glass-card glow-antam rounded-[2rem] p-8 group">
+                <div class="flex justify-between items-start mb-10">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                            <h2 class="text-m font-extrabold tracking-[0.3em] text-slate-200 uppercase">Antam Logam Mulia</h2>
+                        </div>
+                        <p id="status-antam" class="text-[10px] text-slate-400 font-bold font-mono tracking-tight uppercase">Waiting for trigger...</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportSingleVendor('antam')" title="Export Antam" class="w-10 h-10 rounded-xl bg-green-600/10 border border-green-500/30 text-green-500 hover:bg-green-600 hover:text-white transition-all flex items-center justify-center">
+                            <i class="fa-solid fa-file-export text-xs"></i>
+                        </button>
+                        <button onclick="refreshData('antam')" id="btn-antam" class="w-12 h-12 rounded-2xl bg-white/5 hover:bg-yellow-500/20 transition-all flex items-center justify-center border border-white/10 group-hover:border-yellow-500/50">
+                            <i class="fa-solid fa-bolt-lightning text-yellow-500"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div>
+                        <p class="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-2">Market Price (1g)</p>
+                        <h3 id="p-antam" class="text-2xl font-bold tracking-tight text-white font-mono">---</h3>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-2">Buyback Value</p>
+                        <h4 id="bb-antam" class="text-2xl font-bold tracking-tight text-red-500/80 font-mono">---</h4>
+                    </div>
+                </div>
+                <button onclick="toggle('antam')" class="w-full py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition flex justify-center items-center gap-3 text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400">
+                    Market Depth <i id="icon-antam" class="fa-solid fa-angle-down transition-transform"></i>
+                </button>
+                <div id="details-antam" class="hidden pt-6 mt-2 border-t border-white/5">
+                    <div class="max-h-60 overflow-y-auto custom-scroll">
+                        <table class="w-full text-left text-[11px]">
+                            <thead class="text-slate-500 uppercase tracking-widest">
+                                <tr><th class="pb-3">Gram</th><th class="pb-3">Beli</th><th class="pb-3">Buyback</th></tr>
+                            </thead>
+                            <tbody id="table-antam"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card glow-hrta rounded-[2rem] p-8 group">
+                <div class="flex justify-between items-start mb-10">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                            <h2 class="text-m font-extrabold tracking-[0.3em] text-slate-100 uppercase">Hartadinata</h2>
+                        </div>
+                        <p id="status-hrta" class="text-[10px] text-slate-400 font-bold font-mono tracking-tight uppercase">Waiting for trigger...</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportSingleVendor('hrta')" title="Export HRTA" class="w-10 h-10 rounded-xl bg-green-600/10 border border-green-500/30 text-green-500 hover:bg-green-600 hover:text-white transition-all flex items-center justify-center">
+                            <i class="fa-solid fa-file-export text-xs"></i>
+                        </button>
+                        <button onclick="refreshData('hrta')" id="btn-hrta" class="w-12 h-12 rounded-2xl bg-white/5 hover:bg-blue-500/20 transition-all flex items-center justify-center border border-white/10 group-hover:border-blue-500/50">
+                            <i class="fa-solid fa-bolt-lightning text-blue-500"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div>
+                        <p class="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-2">Market Price (1g)</p>
+                        <h3 id="p-hrta" class="text-2xl font-bold tracking-tight text-white font-mono">---</h3>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-2">Buyback Value</p>
+                        <h4 id="bb-hrta" class="text-2xl font-bold tracking-tight text-red-500/80 font-mono">---</h4>
+                    </div>
+                </div>
+                <button onclick="toggle('hrta')" class="w-full py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition flex justify-center items-center gap-3 text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400">
+                    Market Depth <i id="icon-hrta" class="fa-solid fa-angle-down transition-transform"></i>
+                </button>
+                <div id="details-hrta" class="hidden pt-6 mt-2 border-t border-white/5">
+                    <div class="max-h-60 overflow-y-auto custom-scroll"><table class="w-full text-left text-[11px]"><tbody id="table-hrta"></tbody></table></div>
+                </div>
+            </div>
+
+            <div class="glass-card glow-ubs rounded-[2rem] p-8 group">
+                <div class="flex justify-between items-start mb-10">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                            <h2 class="text-m font-extrabold tracking-[0.3em] text-slate-200 uppercase">UBS Lifestyle</h2>
+                        </div>
+                        <p id="status-ubs" class="text-[10px] text-slate-400 font-bold font-mono tracking-tight uppercase">Waiting for trigger...</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportSingleVendor('ubs')" title="Export UBS" class="w-10 h-10 rounded-xl bg-green-600/10 border border-green-500/30 text-green-500 hover:bg-green-600 hover:text-white transition-all flex items-center justify-center">
+                            <i class="fa-solid fa-file-export text-xs"></i>
+                        </button>
+                        <button onclick="refreshData('ubs')" id="btn-ubs" class="w-12 h-12 rounded-2xl bg-white/5 hover:bg-red-500/20 transition-all flex items-center justify-center border border-white/10 group-hover:border-red-500/50">
+                            <i class="fa-solid fa-bolt-lightning text-red-500"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div>
+                        <p class="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-2">Market Price (1g)</p>
+                        <h3 id="p-ubs" class="text-2xl font-bold tracking-tight text-white font-mono">---</h3>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-2">Buyback Value</p>
+                        <h4 id="bb-ubs" class="text-2xl font-bold tracking-tight text-red-500/80 font-mono">---</h4>
+                    </div>
+                </div>
+                <button onclick="toggle('ubs')" class="w-full py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition flex justify-center items-center gap-3 text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400">
+                    Market Depth <i id="icon-ubs" class="fa-solid fa-angle-down transition-transform"></i>
+                </button>
+                <div id="details-ubs" class="hidden pt-6 mt-2 border-t border-white/5">
+                    <div class="max-h-60 overflow-y-auto custom-scroll"><table class="w-full text-left text-[11px]"><tbody id="table-ubs"></tbody></table></div>
+                </div>
+            </div>
+
+            <div class="glass-card glow-g24 rounded-[2rem] p-8 group">
+                <div class="flex justify-between items-start mb-10">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                            <h2 class="text-m font-extrabold tracking-[0.3em] text-slate-200 uppercase">Galeri 24</h2>
+                        </div>
+                        <p id="status-g24" class="text-[10px] text-slate-400 font-bold font-mono tracking-tight uppercase">Waiting for trigger...</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportSingleVendor('g24')" title="Export G24" class="w-10 h-10 rounded-xl bg-green-600/10 border border-green-500/30 text-green-500 hover:bg-green-600 hover:text-white transition-all flex items-center justify-center">
+                            <i class="fa-solid fa-file-export text-xs"></i>
+                        </button>
+                        <button onclick="refreshData('g24')" id="btn-g24" class="w-12 h-12 rounded-2xl bg-white/5 hover:bg-green-500/20 transition-all flex items-center justify-center border border-white/10 group-hover:border-green-500/50">
+                            <i class="fa-solid fa-bolt-lightning text-green-500"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div>
+                        <p class="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-2">Market Price (1g)</p>
+                        <h3 id="p-g24" class="text-2xl font-bold tracking-tight text-white font-mono">---</h3>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-300 uppercase font-black tracking-widest mb-2">Buyback Value</p>
+                        <h4 id="bb-g24" class="text-2xl font-bold tracking-tight text-red-500/80 font-mono">---</h4>
+                    </div>
+                </div>
+                <button onclick="toggle('g24')" class="w-full py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition flex justify-center items-center gap-3 text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400">
+                    Market Depth <i id="icon-g24" class="fa-solid fa-angle-down transition-transform"></i>
+                </button>
+                <div id="details-g24" class="hidden pt-6 mt-2 border-t border-white/5">
+                    <div class="max-h-60 overflow-y-auto custom-scroll"><table class="w-full text-left text-[11px]"><tbody id="table-g24"></tbody></table></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Data Global untuk Export
+        let allData = { antam: [], hrta: [], ubs: [], g24: [] };
+
+        async function refreshData(vendorId) {
+            const btn = document.getElementById(`btn-${vendorId}`);
+            const priceEl = document.getElementById(`p-${vendorId}`);
+            const bbEl = document.getElementById(`bb-${vendorId}`);
+            const tableEl = document.getElementById(`table-${vendorId}`);
+            const statusEl = document.getElementById(`status-${vendorId}`);
+
+            btn.classList.add('animate-spin');
+            statusEl.innerText = "Synchronizing...";
+
+            try {
+                const res = await fetch(`/get_price/${vendorId}`);
+                const data = await res.json();
+
+                if (data && data.length > 0) {
+                    allData[vendorId] = data; // Simpan ke global storage
+                    
+                    const base = data.find(d => d.Gramasi === 1) || data[0];
+                    document.getElementById('global-date').innerText = `Last sync: ${base.Tanggal}`;
+                    statusEl.innerText = "Live Data Secured";
+
+                    priceEl.innerText = `Rp ${base['Harga Beli'].toLocaleString('id-ID')}`;
+                    bbEl.innerText = base['Harga Buyback'] > 0 ? `Rp ${base['Harga Buyback'].toLocaleString('id-ID')}` : "-";
+
+                    let rows = "";
+                    data.forEach(item => {
+                        rows += `
+                            <tr class="border-b border-white/5 hover:bg-white/[0.02] transition">
+                                <td class="py-3 text-yellow-500 font-semibold">${item.Gramasi}g</td>
+                                <td class="py-3 font-mono">Rp ${item['Harga Beli'].toLocaleString('id-ID')}</td>
+                                <td class="py-3 font-mono text-slate-400">${item['Harga Buyback'] > 0 ? 'Rp ' + item['Harga Buyback'].toLocaleString('id-ID') : '-'}</td>
+                            </tr>`;
+                    });
+                    tableEl.innerHTML = rows;
+                }
+            } catch (e) {
+                statusEl.innerText = "Connection Failed";
+            } finally {
+                btn.classList.remove('animate-spin');
+            }
+        }
+
+        function toggle(id) {
+            const el = document.getElementById(`details-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            el.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        // Fungsi Helper untuk format data Excel
+        function mapData(data) {
+            return data.map(item => ({
+                "Vendor": item.Vendor,
+                "Tanggal": item.Tanggal,
+                "Gramasi (g)": item.Gramasi,
+                "Harga Beli (Rp)": item['Harga Beli'],
+                "Harga Buyback (Rp)": item['Harga Buyback']
+            }));
+        }
+
+        // Export SATU Vendor saja
+        function exportSingleVendor(vendorId) {
+            const data = allData[vendorId];
+            if (!data || data.length === 0) {
+                alert(`Data ${vendorId.toUpperCase()} belum dimuat. Klik refresh terlebih dahulu.`);
+                return;
+            }
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(mapData(data));
+            XLSX.utils.book_append_sheet(wb, ws, vendorId.toUpperCase());
+            XLSX.writeFile(wb, `GoldPrice_${vendorId.toUpperCase()}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        }
+
+        // Export SEMUA Vendor
+        function exportAllToExcel() {
+            const wb = XLSX.utils.book_new();
+            let hasData = false;
+
+            for (const [vendor, data] of Object.entries(allData)) {
+                if (data.length > 0) {
+                    hasData = true;
+                    const ws = XLSX.utils.json_to_sheet(mapData(data));
+                    XLSX.utils.book_append_sheet(wb, ws, vendor.toUpperCase());
+                }
+            }
+
+            if (!hasData) {
+                alert("Belum ada data yang dimuat. Silakan klik refresh pada vendor terlebih dahulu.");
+                return;
+            }
+
+            XLSX.writeFile(wb, `GoldPrice_All_Vendors_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        }
+    </script>
+</body>
+</html>
