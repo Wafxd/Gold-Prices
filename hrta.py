@@ -38,7 +38,7 @@ def fetch_html_rendered(url: str) -> str:
 
     # Ambil API KEY dari Browserless (Disarankan pakai Environment Variable di Vercel)
     # Jika di lokal, kamu bisa tempel langsung string API-nya
-    BROWSERLESS_API_KEY = "MASUKKAN_API_KEY_KAMU_DISINI" 
+    BROWSERLESS_API_KEY = "2TsTyTUm4dH4KX49478023f0062631c99d06a126619e2169a" 
     
     # Endpoint WebSocket untuk Browserless
     ws_endpoint = f"wss://chrome.browserless.io/playwright?token={BROWSERLESS_API_KEY}"
