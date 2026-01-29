@@ -36,7 +36,7 @@ def fetch_html_rendered(url: str) -> str:
     from playwright.sync_api import sync_playwright
     
     # Ambil API KEY gratis dari browserless.io
-    BROWSERLESS_TOKEN = "YOUR_API_TOKEN_HERE" 
+    BROWSERLESS_TOKEN = "2TsTyTUm4dH4KX49478023f0062631c99d06a126619e2169a" 
     # Gunakan endpoint WebSocket
     ws_endpoint = f"wss://chrome.browserless.io/playwright?token={BROWSERLESS_TOKEN}"
 
