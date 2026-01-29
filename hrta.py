@@ -34,25 +34,37 @@ def clean_gram(gram_str: str) -> float:
 
 def fetch_html_rendered(url: str) -> str:
     from playwright.sync_api import sync_playwright
+    import os
+
+    # Ambil API KEY dari Browserless (Disarankan pakai Environment Variable di Vercel)
+    # Jika di lokal, kamu bisa tempel langsung string API-nya
+    BROWSERLESS_API_KEY = "MASUKKAN_API_KEY_KAMU_DISINI" 
     
-    # Ambil API KEY gratis dari browserless.io
-    BROWSERLESS_TOKEN = "2TsTyTUm4dH4KX49478023f0062631c99d06a126619e2169a" 
-    # Gunakan endpoint WebSocket
-    ws_endpoint = f"wss://chrome.browserless.io/playwright?token={BROWSERLESS_TOKEN}"
+    # Endpoint WebSocket untuk Browserless
+    ws_endpoint = f"wss://chrome.browserless.io/playwright?token={BROWSERLESS_API_KEY}"
 
     with sync_playwright() as p:
-        # Menghubungkan ke browser eksternal, bukan launch lokal
+        # PENTING: Gunakan connect_over_cdp, BUKAN p.chromium.launch
         browser = p.chromium.connect_over_cdp(ws_endpoint)
+        
+        # Buat context baru dengan User Agent agar tidak dicurigai sebagai bot
         context = browser.new_context(user_agent=HEADERS["User-Agent"])
         page = context.new_page()
 
         try:
-            page.goto(url, wait_until="networkidle", timeout=60_000)
-            # Tunggu selector spesifik
-            page.wait_for_selector('table[data-slot="table"]', timeout=30_000)
-            # Beri waktu render tambahan
+            # Gunakan 'networkidle' agar lebih stabil (menunggu semua request API selesai)
+            page.goto(url, wait_until="networkidle", timeout=60000)
+            
+            # Tunggu selector tabel muncul
+            page.wait_for_selector('table[data-slot="table"]', timeout=30000)
+            
+            # Delay dikit buat VFX render tabelnya
             page.wait_for_timeout(2000)
+            
             html = page.content()
+        except Exception as e:
+            print(f"Scraping Error: {e}")
+            html = ""
         finally:
             browser.close()
             
