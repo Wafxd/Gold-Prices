@@ -33,20 +33,29 @@ def clean_gram(gram_str: str) -> float:
         return 0.0
 
 def fetch_html_rendered(url: str) -> str:
+    from playwright.sync_api import sync_playwright
+    
+    # Ambil API KEY gratis dari browserless.io
+    BROWSERLESS_TOKEN = "YOUR_API_TOKEN_HERE" 
+    # Gunakan endpoint WebSocket
+    ws_endpoint = f"wss://chrome.browserless.io/playwright?token={BROWSERLESS_TOKEN}"
+
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page(extra_http_headers=HEADERS)
+        # Menghubungkan ke browser eksternal, bukan launch lokal
+        browser = p.chromium.connect_over_cdp(ws_endpoint)
+        context = browser.new_context(user_agent=HEADERS["User-Agent"])
+        page = context.new_page()
 
-        page.goto(url, wait_until="domcontentloaded", timeout=60_000)
-
-        # tunggu sampai tabel muncul (ini kunci)
-        page.wait_for_selector('table[data-slot="table"]', timeout=60_000)
-
-        # sedikit delay biar isi tabel lengkap
-        page.wait_for_timeout(1500)
-
-        html = page.content()
-        browser.close()
+        try:
+            page.goto(url, wait_until="networkidle", timeout=60_000)
+            # Tunggu selector spesifik
+            page.wait_for_selector('table[data-slot="table"]', timeout=30_000)
+            # Beri waktu render tambahan
+            page.wait_for_timeout(2000)
+            html = page.content()
+        finally:
+            browser.close()
+            
         return html
 
 def crawl_hartadinata() -> list[dict]:
